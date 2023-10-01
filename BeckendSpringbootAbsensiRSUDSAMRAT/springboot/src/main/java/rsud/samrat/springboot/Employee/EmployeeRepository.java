@@ -12,4 +12,5 @@ public interface EmployeeRepository extends JpaRepository<EmployeeModel,Long> {
     EmployeeModel findLatestEmployeeByNik(@Param("nik") String nik);
 
 
+    boolean existsByNik(String nikToCheck);
 }

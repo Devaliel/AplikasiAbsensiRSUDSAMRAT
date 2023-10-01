@@ -29,6 +29,13 @@ public class EmployeeController {
         return new ResponseEntity<>(createdEmployee, HttpStatus.CREATED);
     }
 
+    @PostMapping("/creates")
+    public List<CreateEmployeeResponseDTO> createEmployees(@RequestBody List<CreateEmployeeRequestDTO> createEmployeeRequestDTOs) {
+        // Call the service to create employees
+        List<CreateEmployeeResponseDTO> responseDTOs = employeeService.createEmployees(createEmployeeRequestDTOs);
+        return responseDTOs;
+    }
+
     @GetMapping
     public ResponseEntity<List<GetAllEmployeeResponseDTO>> getAllEmployees() {
         List<GetAllEmployeeResponseDTO> employees = employeeService.getAllEmployees();

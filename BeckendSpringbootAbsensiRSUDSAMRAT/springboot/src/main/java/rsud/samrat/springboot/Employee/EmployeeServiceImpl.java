@@ -16,6 +16,7 @@ import rsud.samrat.springboot.Schedule.DTOs.ScheduleResponseDTO;
 import rsud.samrat.springboot.Schedule.ScheduleModel;
 import rsud.samrat.springboot.Schedule.ScheduleRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -72,6 +73,55 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         return responseDTO;
     }
+
+
+    public List<CreateEmployeeResponseDTO> createEmployees(List<CreateEmployeeRequestDTO> createEmployeeRequestDTOs) {
+        List<CreateEmployeeResponseDTO> responseDTOs = new ArrayList<>();
+
+        for (CreateEmployeeRequestDTO createEmployeeRequestDTO : createEmployeeRequestDTOs) {
+            String nikToCheck = createEmployeeRequestDTO.getNik();
+
+            // Check if the NIK already exists in the database
+            if (employeeRepository.existsByNik(nikToCheck)) {
+                // If NIK already exists, skip this employee and continue to the next one
+                continue;
+            }
+
+            // Create employee instance
+            EmployeeModel employee = modelMapper.map(createEmployeeRequestDTO, EmployeeModel.class);
+
+            // Find and set placement
+            PlacementModel placement = placementRepository.findById(createEmployeeRequestDTO.getPlacementId())
+                    .orElseThrow(() -> new NotFoundException("Placement not found with id: " + createEmployeeRequestDTO.getPlacementId()));
+            employee.setPlacement(placement);
+
+            // Save employee
+            EmployeeModel savedEmployee = employeeRepository.save(employee);
+
+            // Create user credentials in the Express backend
+            String registerEndpoint = "http://rsudsamrat.site:3001/api/auth/register";
+            UserRegistrationResponseDTO registrationResponse = restTemplate.postForObject(registerEndpoint, createEmployeeRequestDTO, UserRegistrationResponseDTO.class);
+
+            // Extract the response data
+            String nikFromResponse = registrationResponse.getNik();
+            String passwordFromResponse = registrationResponse.getPassword();
+
+            // Create placement response DTO
+            PlacementCreateResponseDTO placementResponseDTO = modelMapper.map(placement, PlacementCreateResponseDTO.class);
+
+            // Create employee response DTO
+            CreateEmployeeResponseDTO responseDTO = modelMapper.map(savedEmployee, CreateEmployeeResponseDTO.class);
+            responseDTO.setPlacement(placementResponseDTO);
+            responseDTO.setEmployeeId(savedEmployee.getEmployee_id());
+            responseDTO.setNik(nikFromResponse); // Set the extracted NIK
+            responseDTO.setPassword(passwordFromResponse); // Set the extracted password
+
+            responseDTOs.add(responseDTO);
+        }
+
+        return responseDTOs;
+    }
+
 
     // EmployeeServiceImpl.java
 
