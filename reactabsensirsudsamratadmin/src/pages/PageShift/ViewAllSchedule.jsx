@@ -5,6 +5,7 @@ import {
   HiDownload,
   HiChevronLeft,
   HiViewList,
+  HiAnnotation,
 } from "react-icons/hi";
 import DataTable from "react-data-table-component";
 import { api } from "../../config/axios";
@@ -27,15 +28,14 @@ export default function ViewAllSchedule() {
   const [endDate, setEndDate] = useState(null);
   const [employeeSchedule, setEmployeeSchedule] = useState([]);
   const [employeeId, setEmployeeId] = useState(0);
+  const [qualityRate, setQualityRate] = useState([]);
   const modalEmployee = useRef(null);
+  const modalQuality = useRef(null);
 
   const [schedule, setSchedule] = useState([]);
 
-  // const filteredScheduleData = schedule.filter((sch) =>
-  //   sch.name.toLowerCase().includes(searchTerm.toLowerCase())
-  // );
-
   const navigate = useNavigate();
+  console.log(filteredSchedule);
 
   function filterSchedules(schedules, id, name) {
     setEmployeeSchedule(
@@ -52,6 +52,22 @@ export default function ViewAllSchedule() {
   function openScheduleModal(schedules, id, name) {
     filterSchedules(schedules, id, name);
     modalEmployee.current.open();
+  }
+
+  function openQualityModal(id, name) {
+    api
+      .get(
+        `/api/v1/dev/attendances/attendance/quality?employeeId=${id}&month=9`
+      )
+      .then((res) => {
+        setQualityRate(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    setEmployeeName(name);
+    setEmployeeId(id);
+    modalQuality.current.open();
   }
 
   const generatePDF = () => {
@@ -176,8 +192,46 @@ export default function ViewAllSchedule() {
           >
             <HiViewList />
           </button>
+          <button
+            type="button"
+            className=" mr-2 btn btn-sm text-white bg-primary-2 hover:bg-primary-3"
+            onClick={() => {
+              openQualityModal(row.employeeId, row.name);
+            }}
+          >
+            <HiAnnotation />
+          </button>
         </div>
       ),
+    },
+  ];
+
+  const qualityRateColumns = [
+    {
+      name: "ID",
+      selector: (row) => row.employeeId,
+      width: "3rem",
+    },
+    {
+      name: "Nama",
+      selector: (row) => row.employeeName,
+      width: "10rem",
+    },
+    {
+      name: "Month",
+      cell: (row) => row.month,
+    },
+    {
+      name: "Checkout",
+      cell: (row) => row.attendanceStatusCount.CheckOut,
+    },
+    {
+      name: "On Time",
+      cell: (row) => row.attendanceStateCount.ON_TIME,
+    },
+    {
+      name: "Quality Rate",
+      cell: (row) => row.qualityRate,
     },
   ];
 
@@ -188,24 +242,72 @@ export default function ViewAllSchedule() {
       },
     },
   };
+  const defaultFilter = () => {
+    const uniqueEmployees = schedule.reduce((acc, sch) => {
+      const employees = sch.employees;
 
+      for (const emp of employees) {
+        const existingEmployee = acc.find(
+          (e) => e.employeeId === emp.employeeId
+        );
+
+        if (!existingEmployee) {
+          acc.push(emp);
+        } else {
+          // Update the existing employee with additional properties
+          existingEmployee.role = emp.role;
+          existingEmployee.nik = emp.nik;
+          existingEmployee.name = emp.name;
+        }
+      }
+
+      return acc;
+    }, []);
+
+    setFilteredSchedule(uniqueEmployees);
+  };
   useEffect(() => {
     // Fetch data from API
     api
       .get("/api/v1/dev/schedule")
       .then((res) => {
-        const allEmployees = [];
+        // const allEmployees = [];
+        // const dataSchedule = res.data;
+        // for (const sch of dataSchedule) {
+        //   const employees = sch.employees;
+
+        //   for (const emp of employees) {
+        //     allEmployees.push(emp);
+        //   }
+        // }
+        // Create a Set to store unique employeeIds
         const dataSchedule = res.data;
-        for (const sch of dataSchedule) {
+
+        // Filter out unique employees based on employeeId
+        const uniqueEmployees = dataSchedule.reduce((acc, sch) => {
           const employees = sch.employees;
 
           for (const emp of employees) {
-            allEmployees.push(emp);
+            const existingEmployee = acc.find(
+              (e) => e.employeeId === emp.employeeId
+            );
+
+            if (!existingEmployee) {
+              acc.push(emp);
+            } else {
+              // Update the existing employee with additional properties
+              existingEmployee.role = emp.role;
+              existingEmployee.nik = emp.nik;
+              existingEmployee.name = emp.name;
+            }
           }
-        }
-        setFilteredSchedule(allEmployees);
-        setSchedule(res.data);
-        console.log(res.data);
+
+          return acc;
+        }, []);
+
+        setFilteredSchedule(uniqueEmployees);
+        setSchedule(dataSchedule);
+        // setFilteredSchedule(allEmployees);
 
         // console.log(allEmployees);
       })
@@ -216,20 +318,19 @@ export default function ViewAllSchedule() {
 
   useEffect(() => {
     if (searchTerm === "") {
-      setFilteredSchedule(
-        schedule
-          .filter((schedule) => schedule.employees.length !== 0)
-          .map((schedule) => schedule.employees)
-          .flat()
-      );
+      // setFilteredSchedule(
+      //   schedule
+      //     .filter((schedule) => schedule.employees.length !== 0)
+      //     .map((schedule) => schedule.employees)
+      //     .flat()
+
+      // );
+      defaultFilter();
       return;
     }
-    const results = schedule
-      .map((schedule) => schedule.employees)
-      .flat()
-      .filter((employee) =>
-        employee.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    const results = filteredSchedule.filter((employee) =>
+      employee.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
     setFilteredSchedule(results);
   }, [searchTerm, schedule]);
 
@@ -263,9 +364,7 @@ export default function ViewAllSchedule() {
 
   useEffect(() => {
     if (scheduleTime === "Shift") {
-      setFilteredSchedule(
-        schedule.map((schedule) => schedule.employees).flat()
-      );
+      defaultFilter();
       return;
     }
 
@@ -301,6 +400,7 @@ export default function ViewAllSchedule() {
         }}
       >
         <h3>Jadwal {employeeName}</h3>
+
         <div className=" overflow-auto max-h-[30rem]">
           <DataTable
             columns={employeeColumns}
@@ -318,6 +418,25 @@ export default function ViewAllSchedule() {
           >
             Download Schedule
           </button>
+        </div>
+      </Popup>
+      <Popup
+        ref={modalQuality}
+        modal
+        contentStyle={{
+          borderRadius: "12px",
+          padding: "2rem",
+          width: "50rem",
+          height: "37rem",
+        }}
+      >
+        <h3>Quality Rate {employeeName}</h3>
+        <div className=" overflow-auto max-h-[30rem]">
+          <DataTable
+            columns={qualityRateColumns}
+            data={qualityRate}
+            customStyles={customStyles}
+          />
         </div>
       </Popup>
       <button

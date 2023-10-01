@@ -1,3 +1,8 @@
 {
+<<<<<<< HEAD
     "java.configuration.updateBuildConfiguration": "disabled"
+=======
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+>>>>>>> 67e4578f947ac7e59f2cfea7b5237a4050377d7a
 }

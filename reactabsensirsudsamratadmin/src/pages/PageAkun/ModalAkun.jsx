@@ -8,6 +8,7 @@ import {
   HiEyeOff,
   HiOutlineX,
   HiPencil,
+  HiChevronDown,
 } from "react-icons/hi";
 import { api } from "../../config/axios";
 import { toast } from "react-toastify";
@@ -20,6 +21,10 @@ const ModalAkun = forwardRef(({ data, type, onClose }, ref) => {
   const [nik, setNik] = useState("");
   const [jabatan, setJabatan] = useState(data?.role);
   const [name, setName] = useState(data?.name);
+  const [dropdownIsOpen, setDropdownIsOpen] = useState(false);
+  const [placementID, setPlacementId] = useState(null);
+  const [placementIdDropdown, setPlacementIdDropdown] = useState([]);
+  const [reloadApi, setReloadApi] = useState(false);
 
   const allFieldsFilled = () => {
     return jabatan && name;
@@ -77,9 +82,22 @@ const ModalAkun = forwardRef(({ data, type, onClose }, ref) => {
     }
   }, [data, type]);
 
+  useEffect(() => {
+    // Fetch data from API
+    api
+      .get("/api/v1/dev/placements")
+      .then((res) => {
+        setPlacementIdDropdown(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, [reloadApi]);
+
   const handleCloseModal = () => {
     setJabatan("");
     setName("");
+    setPlacementId(null);
     onClose();
   };
 
@@ -97,18 +115,27 @@ const ModalAkun = forwardRef(({ data, type, onClose }, ref) => {
     setName(e.target.value);
   };
 
+  const handleOptionClick = (option) => {
+    setPlacementId(option);
+    toggleDropdown();
+  };
+
+  const toggleDropdown = () => {
+    setDropdownIsOpen(!dropdownIsOpen);
+  };
+
   const postAkunData = () => {
     const data = {
       name: name,
       role: jabatan,
       password: password,
       nik: nik,
-      placementId: akunData?.placement_id ?? 1,
+      placementId: placementID,
     };
     const dataEdit = {
       name: name,
       role: jabatan,
-      placementId: akunData?.placement?.placement_id ?? 1,
+      placementId: placementID,
     };
     if (type === "create") {
       api
@@ -119,6 +146,7 @@ const ModalAkun = forwardRef(({ data, type, onClose }, ref) => {
         })
         .catch((err) => {
           console.log(err);
+
           createFailed();
         });
     } else if (type === "edit") {
@@ -181,6 +209,42 @@ const ModalAkun = forwardRef(({ data, type, onClose }, ref) => {
                   </button>
                 </div>
               </div>
+              <div className="flex flex-col justify-start gap-1">
+                <h3>Placement ID</h3>
+                <div className="relative inline-block text-left w-full">
+                  <button
+                    type="button"
+                    className="dropdown-button btn h-12 justify-between w-full  bg-white border  rounded-md shadow-sm border-gray-300  "
+                    onClick={toggleDropdown}
+                  >
+                    {placementID}
+                    <HiChevronDown />
+                  </button>
+                  {/*dropdown*/}
+
+                  <ul
+                    className={`dropdown-content absolute z-10 ${
+                      dropdownIsOpen ? "block" : "hidden"
+                    } w-full mt-1 p-2 bg-white border border-gray-300 rounded-md shadow-lg transition ease-in-out duration-200 transform ${
+                      dropdownIsOpen
+                        ? "opacity-100 scale-y-100"
+                        : "opacity-0 scale-y-95"
+                    }`}
+                  >
+                    {placementIdDropdown.map((e) => (
+                      <li
+                        key={e.placement_id}
+                        className="block px-4 py-2 text-sm text-gray-400 cursor-pointer hover:bg-primary-2 hover:text-white"
+                        onClick={() => handleOptionClick(e.placement_id)}
+                      >
+                        {e.placement_id}
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/*dropdown*/}
+                </div>
+              </div>
               <div className="grid flex-1 w-full gap-2">
                 <div className="flex flex-col justify-start gap-1">
                   <h3>Nama</h3>
@@ -234,14 +298,16 @@ const ModalAkun = forwardRef(({ data, type, onClose }, ref) => {
                     </button>
                   </div>
                 </div>
-                <div className="mt-2">
+
+                <div className="mt-10">
                   <button
                     onClick={() => {
                       if (type === "create") {
-                        setAkunData({ ...akunData, placementId: 1 });
+                        setAkunData({ ...akunData });
                       }
                       postAkunData();
                       onClose();
+                      setReloadApi(!reloadApi);
                     }}
                     // disabled={!allFieldsFilled()}
                     className="text-white btn bg-primary-2 hover:bg-primary-3 w-full"

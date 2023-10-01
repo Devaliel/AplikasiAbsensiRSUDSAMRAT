@@ -1,6 +1,8 @@
 import { apiCheckToken, apiLogin } from '../../config/axios';
 import Cookies from 'js-cookie';
 import React from 'react';
+import { api } from '../../config/axios';
+import ModalBukti from '../PageAbsensi/ModalBukti';
 import { HiOutlineEye } from 'react-icons/hi';
 import DataTable from 'react-data-table-component';
 import { useState, useEffect } from 'react';
@@ -18,6 +20,10 @@ import {
 export default function PageDashboard() {
   const [absences, setAbsences] = useState([]);
   const [filteredAbsences, setFilteredAbsences] = useState([]);
+  const [imgCheckIn, setImgCheckIn] = useState(null);
+  const [imgCheckOut, setImgCheckOut] = useState(null);
+  const [selectedData, setSelectedData] = useState(null);
+  const modalBuktiRef = React.useRef();
 
   const columns = [
     {
@@ -59,6 +65,12 @@ export default function PageDashboard() {
       cell: (row) => (
         <button
           type='button'
+          onClick={() => {
+            setImgCheckIn(row.selfieCheckIn);
+            setImgCheckOut(row.selfieCheckOut);
+            setSelectedData(row);
+            modalBuktiRef.current.open();
+          }}
           className='btn btn-sm bg-primary-2 text-white hover:bg-primary-3'>
           <HiOutlineEye />
         </button>
@@ -87,50 +99,104 @@ export default function PageDashboard() {
     }
   };
 
-  const exampleData = [
-    {
-      name: 'Tiger Nixon',
-      time: 'System Architect',
-      shift: 'Edinburgh',
-      category: '61',
-      presence: 'red'
-    },
-    {
-      name: 'Garrett Winters',
-      time: 'Accountant',
-      shift: 'Tokyo',
-      category: '63',
-      presence: 'green'
-    },
-    {
-      name: 'Ashton Cox',
-      time: 'Junior Technical Author',
-      shift: 'San Francisco',
-      category: '66',
-      presence: 'yellow'
-    },
-    {
-      name: 'Cedric Kelly',
-      time: 'Senior Javascript Developer',
-      shift: 'Edinburgh',
-      category: '22',
-      presence: 'blue'
-    },
-    {
-      name: 'Airi Satou',
-      time: 'Accountant',
-      shift: 'Tokyo',
-      category: '33',
-      presence: 'red'
-    },
-    {
-      name: 'Brielle Williamson',
-      time: 'Integration Specialist',
-      shift: 'New York',
-      category: '61',
-      presence: 'green'
-    }
-  ];
+  useEffect(() => {
+    const fetchAbsences = async () => {
+      // try {
+      //   const response = await apiCheckToken.get('/ping');
+      //   console.log(response.data);
+      //   if (response.data) {
+      try {
+        const response = await api.get(
+          '/api/v1/dev/attendances/all-with-schedule'
+        );
+        const data = response.data;
+
+        const ExtractData = data.map((attendance) => {
+          const shiftStartTime = attendance.shift.start_time;
+          const shiftEndTime = attendance.shift.end_time;
+
+          const clockIn = attendance.attendances[0]?.clockIn
+            ? new Date(attendance.attendances[0].clockIn)
+            : null;
+          const clockOut = attendance.attendances[0]?.clockOut
+            ? new Date(attendance.attendances[0].clockOut)
+            : null;
+
+          const selfieCheckIn = attendance.attendances[0]?.selfieCheckIn
+            ? attendance.attendances[0].selfieCheckIn
+            : null;
+
+          const selfieCheckOut = attendance.attendances[0]?.selfieCheckOut
+            ? attendance.attendances[0].selfieCheckOut
+            : null;
+
+          const formatWaktu = (waktu) => {
+            const options = {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false
+            };
+            return waktu.toLocaleTimeString('en-US', options);
+          };
+          const clockInTime = clockIn ? formatWaktu(clockIn) : null;
+          const clockOutTime = clockOut ? formatWaktu(clockOut) : null;
+
+          let statusPenilaian = 'red'; // Default: Tidak ada data clock in atau clock out
+
+          if (clockInTime && clockOutTime) {
+            if (clockInTime <= shiftStartTime && clockOutTime >= shiftEndTime) {
+              statusPenilaian = 'green'; // Clock in sebelum start_time dan clock out setelah end_time
+            } else if (clockInTime > shiftStartTime) {
+              statusPenilaian = 'yellow'; // Clock in setelah start_time
+            }
+          } else if (clockInTime) {
+            if (clockInTime > shiftStartTime) {
+              statusPenilaian = 'yellow'; // Clock in setelah start_time
+            }
+          }
+
+          const employeeNamesString = attendance.attendances
+            .map((attendance) => attendance.employee.name)
+            .join(', ')
+            .replace(
+              /\w\S*/g,
+              (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+            );
+
+          return {
+            clockInTime: clockInTime,
+            clockOutTime: clockOutTime,
+            shiftStartTime: shiftStartTime,
+            shiftEndTime: shiftEndTime,
+            presence: statusPenilaian,
+            id: attendance.scheduleId,
+            category: attendance.attendances.map(
+              (attendance) => attendance.attendanceType
+            ),
+            name: employeeNamesString,
+            time: attendance.scheduleDate,
+            shift: attendance.shift.name,
+            selfieCheckIn: selfieCheckIn,
+            selfieCheckOut: selfieCheckOut
+          };
+        });
+        console.log('----------------------', ExtractData);
+
+        setAbsences(ExtractData);
+        setFilteredAbsences(ExtractData);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    //   } catch (error) {
+    //     console.log(error);
+    //     // dispatch(expiredToken());
+    //   }
+    // };
+
+    fetchAbsences();
+  }, []);
 
   const exampleNotification = [
     {
@@ -198,8 +264,8 @@ export default function PageDashboard() {
   });
 
   useEffect(() => {
-    setAbsences(exampleData);
-    setFilteredAbsences(exampleData);
+    setAbsences(absences);
+    setFilteredAbsences(absences);
   }, []);
 
   console.log(filteredAbsences);
@@ -207,6 +273,13 @@ export default function PageDashboard() {
 
   return (
     <div className='flex flex-col mt-5'>
+      <ModalBukti
+        ref={modalBuktiRef}
+        imageCheckIn={imgCheckIn}
+        imageCheckOut={imgCheckOut}
+        selectedData={selectedData}
+        onClose={() => modalBuktiRef.current.close()}
+      />
       <div className='flex flex-1 flex-row gap-8'>
         <div className='flex flex-col gap-4' style={{ flexBasis: '70%' }}>
           <div className='flex text-xl font-bold'>Dasbor</div>
