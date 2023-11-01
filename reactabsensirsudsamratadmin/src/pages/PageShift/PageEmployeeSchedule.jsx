@@ -1,10 +1,4 @@
 import React, { useState, useEffect } from "react";
-<<<<<<< HEAD
-import { HiSearch, HiOutlineTrash, HiOutlinePlus } from "react-icons/hi";
-import DataTable from "react-data-table-component";
-import { api } from "../../config/axios";
-import { useParams } from "react-router-dom";
-=======
 import {
   HiSearch,
   HiOutlineTrash,
@@ -15,7 +9,6 @@ import DataTable from "react-data-table-component";
 import { api } from "../../config/axios";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
->>>>>>> cbabdb6c016eed8d574e1a718dfe36d71db23a5b
 
 export default function PageEmployeeSchedule() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,11 +27,7 @@ export default function PageEmployeeSchedule() {
     {
       name: "ID",
       selector: (row) => row.employeeId,
-<<<<<<< HEAD
       width: "50px",
-=======
-      width: "80px",
->>>>>>> cbabdb6c016eed8d574e1a718dfe36d71db23a5b
     },
     {
       name: "Name",
@@ -58,11 +47,7 @@ export default function PageEmployeeSchedule() {
         <button
           type="button"
           className="mr-2 text-white btn btn-sm bg-primary-2 hover:bg-primary-3"
-<<<<<<< HEAD
           onClick={() => handleAdd(row.employeeId, row.name)}
-=======
-          onClick={() => handleAdd(row.employeeId)}
->>>>>>> cbabdb6c016eed8d574e1a718dfe36d71db23a5b
         >
           <HiOutlinePlus />
         </button>
@@ -74,11 +59,7 @@ export default function PageEmployeeSchedule() {
     {
       name: "ID",
       selector: (row) => row.employeeId,
-<<<<<<< HEAD
       width: "50px",
-=======
-      width: "80px",
->>>>>>> cbabdb6c016eed8d574e1a718dfe36d71db23a5b
     },
     {
       name: "Name",
@@ -112,7 +93,6 @@ export default function PageEmployeeSchedule() {
       const res = await api.post(`/api/v1/dev/employees/${id}/schedule`, {
         employeeId: id,
         scheduleId: scheduleId,
-<<<<<<< HEAD
       });
 
       console.log(`Berhasil Menambahkan ${name} ke jadwal.`);
@@ -141,25 +121,6 @@ export default function PageEmployeeSchedule() {
       setIsLoading(false);
       window.location.reload();
     }
-=======
-      })
-      .then((res) => {
-        console.log(res.data);
-
-        // add this row to haveSchedule state
-        setHaveSchedule([
-          ...haveSchedule,
-          searchResults.find((item) => item.employeeId === id),
-        ]);
-        // remove this row from schedule state
-        setSchedule(searchResults.filter((item) => item.employeeId !== id));
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-
-    console.log("haveSchedule: ", haveSchedule);
->>>>>>> cbabdb6c016eed8d574e1a718dfe36d71db23a5b
   };
 
   const handleDelete = (id) => {
@@ -223,10 +184,6 @@ export default function PageEmployeeSchedule() {
         )
     );
     setSchedule(filteredSchedule);
-<<<<<<< HEAD
-=======
-    console.log("filteredSchedule: ", filteredSchedule);
->>>>>>> cbabdb6c016eed8d574e1a718dfe36d71db23a5b
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [haveSchedule]);
 
@@ -258,42 +215,11 @@ export default function PageEmployeeSchedule() {
 
   return (
     <div>
-<<<<<<< HEAD
       {isLoading ? (
         <div>
           <div className="grid justify-center items-center h-56">
             <div className="flex justify-center">
               <span className="loading loading-dots loading-lg mb-3"></span>
-=======
-      <button
-        className="btn bg-transparent border-none"
-        onClick={() => navigate(`/shift`)}
-      >
-        <HiChevronLeft />
-        Schedule
-      </button>
-      <h1 className="text-xl font-medium">Jadwal Pegawai</h1>
-      <div className="flex flex-col gap-3">
-        <div className="flex justify-between items-center gap-2">
-          <div className="w-full flex justify-center items-center">
-            <div className="flex flex-col justify-start items-start w-full">
-              <h2 className="font-bold">Date</h2>
-              <span>{scheduleData.scheduleDate}</span>
-            </div>
-            <div className="flex flex-col justify-start items-start w-full">
-              <h2 className="font-bold">Sif</h2>
-              <span>{scheduleData.shift.name}</span>
-            </div>
-            <div className="flex flex-col justify-start items-start w-full">
-              <h2 className="font-bold">Waktu</h2>
-              <span>
-                {scheduleData.shift.start_time} - {scheduleData.shift.end_time}
-              </span>
-            </div>
-            <div className="flex flex-col justify-start items-start w-full">
-              <h2 className="font-bold">Location</h2>
-              <span>{scheduleData.location ?? "Tidak Diketahui"}</span>
->>>>>>> cbabdb6c016eed8d574e1a718dfe36d71db23a5b
             </div>
             <p className="text text-center text-2xl font-bold ">
               {addingEmployeeName
@@ -301,7 +227,6 @@ export default function PageEmployeeSchedule() {
                 : "Menambahkan Pegawai"}
             </p>
           </div>
-<<<<<<< HEAD
           <progress
             className="progress progress-success w-full"
             value={progress}
@@ -392,47 +317,6 @@ export default function PageEmployeeSchedule() {
           </div>
         </div>
       )}
-=======
-          {/* Search Bar */}
-          <div className="flex items-center relative w-full">
-            <HiSearch className="absolute left-4" />
-            <input
-              type="text"
-              placeholder="Cari..."
-              className="w-full pl-10 input input-bordered"
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="mt-3">
-          <h1 className="font-bold">Tanpa Jadwal </h1>
-          <p className="text-xs text-slate-500">
-            {searchResults.length} Pegawai
-          </p>
-          <div className=" overflow-auto max-h-[29vh]">
-            <DataTable
-              columns={columns1}
-              data={searchResults}
-              customStyles={customStyles}
-            />
-          </div>
-        </div>
-        <div className="mt-3">
-          <h1 className="font-bold">Dengan Jadwal </h1>
-          <p className="text-xs text-slate-500">
-            {searchResults2.length} Pegawai
-          </p>
-          <div className=" overflow-auto max-h-[29vh]">
-            <DataTable
-              columns={columns2}
-              data={searchResults2}
-              customStyles={customStyles}
-            />
-          </div>
-        </div>
-      </div>
->>>>>>> cbabdb6c016eed8d574e1a718dfe36d71db23a5b
     </div>
   );
 }

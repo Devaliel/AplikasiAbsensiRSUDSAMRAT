@@ -84,11 +84,6 @@ const ModalAbsen = ({ isOpen, onClose }) => {
       .toString()
       .padStart(2, "0")}-${targetDate.getDate().toString().padStart(2, "0")}`;
 
-<<<<<<< HEAD
-    const formattedClockIn = `${formattedAttendanceDate}T${now
-      .toLocaleTimeString([], { hour12: false })
-      .padStart(8, "0")}`;
-=======
     const empData = employeeData.filter((emp) => emp.id === empId);
 
     // Format the clockIn time in "YYYY-MM-DDTHH:mm:ss" format
@@ -102,31 +97,12 @@ const ModalAbsen = ({ isOpen, onClose }) => {
     }
     console.log("emp data", empData);
     const formattedClockIn = `${formattedAttendanceDate}T${clockInTime}`; // Using client local time
->>>>>>> cbabdb6c016eed8d574e1a718dfe36d71db23a5b
 
     const data = new FormData();
     data.append("scheduleId", schId);
     data.append("employeeId", empId);
     data.append("attendanceDate", formattedAttendanceDate);
     data.append("clockIn", formattedClockIn);
-<<<<<<< HEAD
-    data.append("clockOut", '');
-    data.append("locationLatIn", '37.7749');
-    data.append("locationLongIn", '-122.4194');
-    data.append("status", "CheckIn");
-    data.append("attendanceType", "WFO");
-    data.append("selfieCheckInImage", null);
-    
-    try {
-      const response = await api.post("/api/v1/dev/attendances/checkInMasuk", data, {headers: {"Content-Type": "multipart/form-data"}});
-
-      console.log(response.data)
-    } catch (err) {
-      console.log("error : ", err)
-    }
-
-
-=======
     data.append("clockOut", "");
     data.append("locationLatIn", "37.7749");
     data.append("locationLongIn", "-122.4194");
@@ -160,7 +136,6 @@ const ModalAbsen = ({ isOpen, onClose }) => {
           console.error("Error message:", error.message);
         }
       });
->>>>>>> cbabdb6c016eed8d574e1a718dfe36d71db23a5b
   };
 
   const handleOptionClick = (id, name) => {
