@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface AttendanceService {
     AttendanceCreateResponseDTO addAttendanceToSchedule(AttendanceCreateRequestDTO requestDTO, MultipartFile selfieCheckInImage);
+
+    AttendanceCreateResponseDTO addAttendanceToScheduleNoValidations(AttendanceCreateRequestDTO requestDTO, MultipartFile selfieCheckInImage);
     List<AttendanceCreateResponseDTO> getAllAttendanceByDate(LocalDate attendanceDate);
     AttendanceCreateResponseDTO updateAttendanceStatusAndCheckoutDetails(AttendanceUpdateRequestDTO requestDTO, MultipartFile selfieCheckOutImage);
 

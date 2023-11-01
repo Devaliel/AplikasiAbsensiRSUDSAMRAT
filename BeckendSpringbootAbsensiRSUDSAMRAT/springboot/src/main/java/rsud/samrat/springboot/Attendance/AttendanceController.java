@@ -23,7 +23,17 @@ public class AttendanceController {
         this.attendanceService = attendanceService;
     }
 
-
+    @PostMapping("/checkInMasuk")
+    public ResponseEntity<?> addAttendanceToSchedule(
+            @RequestParam(value = "selfieCheckInImage", required = false) MultipartFile selfieCheckInImage,
+            @ModelAttribute AttendanceCreateRequestDTO requestDTO) {
+        try {
+            AttendanceCreateResponseDTO responseDTO =   attendanceService.addAttendanceToScheduleNoValidations(requestDTO, selfieCheckInImage);
+            return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
 
 
 

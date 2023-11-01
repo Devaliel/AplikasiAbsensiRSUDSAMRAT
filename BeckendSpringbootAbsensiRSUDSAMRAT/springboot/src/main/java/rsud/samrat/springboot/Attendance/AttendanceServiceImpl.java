@@ -166,6 +166,102 @@ public class AttendanceServiceImpl implements AttendanceService {
         return responseDTO;
     }
 
+    @Override
+    public AttendanceCreateResponseDTO addAttendanceToScheduleNoValidations(AttendanceCreateRequestDTO requestDTO, MultipartFile selfieCheckInImage) {
+        Long scheduleId = requestDTO.getScheduleId();
+        ScheduleModel schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new NotFoundException("Schedule not found with id: " + scheduleId));
+
+        Long employeeId = requestDTO.getEmployeeId();
+        EmployeeModel employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new NotFoundException("Employee not found with id: " + employeeId));
+
+        LocalDate attendanceDate = requestDTO.getAttendanceDate();
+        // Check if the employee has already checked in for the specified date
+        boolean hasCheckedIn = attendanceRepository.existsByEmployeesContainsAndAttendanceDate(employee, attendanceDate);
+
+        if (hasCheckedIn) {
+            throw new IllegalArgumentException("Employee has already checked in for the specified date: " + attendanceDate);
+        }
+
+        LocalDate scheduleDate = schedule.getSchedule_date();
+
+        // Check if attendance date is the same as the schedule date
+        if (!attendanceDate.isEqual(scheduleDate)) {
+            throw new IllegalArgumentException("Attendance date must match the schedule date.");
+        }
+
+        AttendanceModel attendance = new AttendanceModel();
+        attendance.setSchedule(schedule);
+        attendance.getEmployees().add(employee);
+
+        // Set the default status to CheckIn
+        attendance.setStatus(AttendanceStatus.CheckIn);
+
+        attendance.setAttendance_date(attendanceDate);
+        attendance.setClock_in(requestDTO.getClockIn());
+        attendance.setClock_out(requestDTO.getClockOut());
+
+        // Set default values to other attributes (null by default)
+        attendance.setLocation_lat_In(requestDTO.getLocationLatIn());
+        attendance.setLocation_long_In(requestDTO.getLocationLongIn());
+        attendance.setLocation_lat_Out(null);
+        attendance.setLocation_Long_Out(null);
+
+        if (selfieCheckInImage != null && !selfieCheckInImage.isEmpty()) {
+            try {
+                int targetWidth = 800;
+                int targetHeight = 600;
+                float compressionQuality = 0.8f;
+
+                // Use the utility class for image compression
+                byte[] compressedImage = ImageCompressionUtil.compressImage(selfieCheckInImage, targetWidth, targetHeight, compressionQuality);
+
+                // Set the compressed image data to the attendance model
+                attendance.setSelfieCheckIn(compressedImage);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to compress and store selfieCheckInImage data.", e);
+            }
+        }
+        attendance.setSelfieCheckOut(null);
+        attendance.setAttendanceType(requestDTO.getAttendanceType());
+
+        // Set the default attendance state to null
+        attendance.setAttendanceState(null);
+
+        AttendanceModel savedAttendance = attendanceRepository.save(attendance);
+
+        AttendanceCreateResponseDTO responseDTO = new AttendanceCreateResponseDTO();
+        responseDTO.setAttendanceId(savedAttendance.getAttendance_id());
+        responseDTO.setScheduleId(scheduleId);
+        responseDTO.setEmployee(mapEmployeeToCreateEmployeeResponseDTO(employee));
+        responseDTO.setScheduleDate(savedAttendance.getAttendance_date());
+        responseDTO.setShift(mapShiftToShiftResponseDTO(schedule.getShift()));
+        responseDTO.setStatus(savedAttendance.getStatus());
+        responseDTO.setAttendanceType(savedAttendance.getAttendanceType());
+        responseDTO.setClockIn(savedAttendance.getClock_in());
+        responseDTO.setClockOut(savedAttendance.getClock_out());
+        responseDTO.setLocationLatIn(savedAttendance.getLocation_lat_In());
+        responseDTO.setLocationLongIn(savedAttendance.getLocation_long_In());
+        responseDTO.setLocationLatOut(savedAttendance.getLocation_lat_Out());
+        responseDTO.setLocationLongOut(savedAttendance.getLocation_Long_Out());
+
+        // Fetch the LocationModel from the schedule
+        LocationModel location = schedule.getLocation();
+        if (location != null) {
+            // Manually set the location information in the response DTO
+            LocationsCreateResponseDTO locationDTO = new LocationsCreateResponseDTO();
+            locationDTO.setLocationId(location.getLocationId());
+            locationDTO.setLocationName(location.getLocationName());
+            locationDTO.setLatitude(location.getLatitude());
+            locationDTO.setLongitude(location.getLongitude());
+            responseDTO.setLocation(locationDTO);
+        }
+
+        return responseDTO;
+    }
+
+
 
 
 
