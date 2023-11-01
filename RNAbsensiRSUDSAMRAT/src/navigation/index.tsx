@@ -14,9 +14,21 @@ import axios from 'axios';
 const Tab = createBottomTabNavigator();
 
 function Tabs({navigation}) {
-    const [countUnreadNotif, setCountUnreadNotif] = useState(5)
+    const [countUnreadNotif, setCountUnreadNotif] = useState(0)
     const [accesToken, setAccessToken] = useState('');
     const [nik, setNik] = useState('');
+
+    const countNotif = async () => {
+        try {
+            const response = await axios.get(
+                'http://rsudsamrat.site:3001/api/notification',
+            );
+            const totalNotif = response.data.data.length;
+            setCountUnreadNotif(totalNotif);
+            } catch (error) {
+            console.log(error);
+            }
+    };
 
     const getTokenNik = async () => {
         try {
@@ -56,10 +68,12 @@ function Tabs({navigation}) {
     
     useEffect(() => {
         getTokenNik();
+        countNotif();
     }, [])
     
     return (
         <Tab.Navigator
+            detachInactiveScreens={false}
             screenOptions={{
                 tabBarShowLabel: false,
                 tabBarStyle:{
@@ -180,7 +194,6 @@ function Tabs({navigation}) {
                             justifyContent: 'center',
                             alignItems: 'center',
                             position: 'relative'
-                            // backgroundColor: '#ff0'
                         }}>
                             <Image 
                                 source={require('./../assets/icons/Notification.png')}

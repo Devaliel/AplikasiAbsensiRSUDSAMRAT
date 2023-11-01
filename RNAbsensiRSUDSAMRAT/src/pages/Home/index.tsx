@@ -1,16 +1,45 @@
-import { StyleSheet, Text, View, SafeAreaView, Image, ScrollView } from 'react-native'
+import { StyleSheet, Text, View, SafeAreaView, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Ilustration1, ProfilePicture } from '../../assets/images'
 import AttendanceCard from '../../components/AttendanceCard';
 import AnnouncementCard from '../../components/AnnouncementCard';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import socketService from '../../config/socket/socket';
 
-const Home = () => {
+const Home = ({navigation}) => {
     const [name, setName] = useState('');
     const [totalDays, setTotalDays] = useState(0);
     const [checkInTime, setCheckInTime] = useState('');
     const [checkOutTime, setCheckOutTime] = useState('');
+    const [getNotification, setGetNotification] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const getNotif = async () => {
+            try {
+            const response = await axios.get(
+                'http://rsudsamrat.site:3001/api/notification',
+            );
+            setGetNotification(response.data.data);
+            } catch (error) {
+            console.log(error);
+            }
+    };
+
+    useEffect(() => {
+        socketService.initializeSocket();
+        getNotif();
+    }, []);
+
+    useEffect(() => {
+        socketService.on('recieve_message', data => {
+            setGetNotification(prevMessage => [...prevMessage, data]);
+        });
+    
+        return () => {
+            socketService.removeListener('recieve_message');
+        };
+    }, []);
 
     const getNik = async () => {
         try {
@@ -53,9 +82,9 @@ const Home = () => {
                 schedule.employees.some(employee => employee.employeeId === convertEmployeeId)
             )
             .map(schedule => schedule.shift.end_time);
-            
             setCheckInTime(startTime[0]);
             setCheckOutTime(endTime[0]);
+            setIsLoading(false);
         }).catch((err) => {
             console.log('error when access endpoint:', err)
         });
@@ -103,7 +132,7 @@ const Home = () => {
                 <Image source={Ilustration1} style={styles.ilustration}/>
                 <View style={styles.header}>
                     <View style={styles.profilePicture}>
-                        <Image source={ProfilePicture} style={{width: 86, height: 86, borderRadius: 43}} />
+                        <Image source={ProfilePicture} style={{width: 86, height: 86, borderRadius: 43, borderWidth: 1, borderColor: '#000f'}} />
                     </View>
                     <View>
                         <Text style={styles.greeting}>Holla,</Text>
@@ -111,19 +140,34 @@ const Home = () => {
                     </View>
                 </View>
                 <View style={styles.contentContainer}>
-                    <Text style={styles.text1}>Today Attendance</Text>
-                    <View style={styles.cardContainer}>
-                        <AttendanceCard icon={require('./../../assets/icons/Signin.png')} title="Check In" time={checkInTime} addInfo="On Time"/>
-                        <AttendanceCard icon={require('./../../assets/icons/Signout.png')} title="Check Out" time={checkOutTime} addInfo="Go Home"/>
-                    </View>
-                    <View style={styles.additionalCard}>
-                        <AttendanceCard icon={require('./../../assets/icons/MiniCalendar.png')} title="Total Days" time={totalDays} addInfo="Working Days"/>
-                    </View>
+                    {isLoading ? (
+                        <ActivityIndicator
+                            size={'large'}
+                            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                        />
+                    ) : (
+                        <>
+                            <Text style={styles.text1}>Today Attendance</Text>
+                            <View style={styles.cardContainer}>
+                                <AttendanceCard icon={require('./../../assets/icons/Signin.png')} title="Check In" time={checkInTime} addInfo="On Time"/>
+                                <AttendanceCard icon={require('./../../assets/icons/Signout.png')} title="Check Out" time={checkOutTime} addInfo="Go Home"/>
+                            </View>
+                            <TouchableOpacity style={styles.additionalCard} activeOpacity={0.8} onPress={() => navigation.navigate('History')}>
+                                <AttendanceCard icon={require('./../../assets/icons/MiniCalendar.png')} title="Total Days" time={totalDays} addInfo="Working Days"/>
+                            </TouchableOpacity>
+                        </>
+                    )}
                 </View>
                 <View style={styles.announcementContainer}>
                     <Text style={styles.text1}>Announcement</Text>
-                    <AnnouncementCard title="HOLIDAY HUT RI-78" desc="Agustus 16-17 Akan libur bersama dalam rangka HUT RI ke-78" date="Kamis, 17 Agustus 2023"/>
-                    <AnnouncementCard title="RELOKASI RSUD SAM RATULANGI TONDANO" desc="September Akan pindah ke rumah sakit baru Seluruh Staff MANAJEMEN" date="Senin, 1 Agustus 2023"/>
+                    {getNotification.map((notif, index) => (
+                        <AnnouncementCard 
+                            key={index}
+                            title={notif.title}
+                            desc={notif.desc}
+                            date={notif.date}
+                        />
+                    ))}
                 </View>
             </ScrollView>
         </SafeAreaView>

@@ -1,10 +1,10 @@
-import { Image, ImageBackground, StyleSheet, Text, View } from 'react-native'
+import { Image, StyleSheet, View } from 'react-native'
 import React, { useEffect } from 'react'
 
 const AttendanceDone = ({navigation}: any) => {
     useEffect(() => {
         setTimeout(() => {
-            navigation.replace('Tabs')
+            navigation.push('Tabs')
         }, 3000);
     }, [])
   return (

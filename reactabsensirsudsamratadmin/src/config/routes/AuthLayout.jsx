@@ -20,6 +20,7 @@ export const AuthLayout = () => {
   const accessToken = Cookies.get('access_token');
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const tokenExpired = useSelector((state) => state.auth.tokenExpired);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
     if (!accessToken) {
@@ -29,10 +30,35 @@ export const AuthLayout = () => {
     setActiveLink(window.location.pathname);
   }, []);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDate(new Date());
+    }, 1000); 
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatDate = (date) => {
+    const options = {
+      weekday: 'long', 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit', 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit', 
+    };
+    return date.toLocaleString(undefined, options);
+  };
+
   const logOut = () => {
     Cookies.remove('access_token');
     window.location.href = '/';
   };
+
+  const DateNow = () => {
+
+  }
 
   return (
     <div className='flex flex-col items-stretch justify-start h-full overflow-hidden'>
@@ -110,8 +136,8 @@ export const AuthLayout = () => {
                 className='absolute top-0 left-0 z-0 w-full h-full overflow-hidden bg-cover'
               />
               <div className='z-10 text-2xl text-white'>
-                <p>Hello, John</p>
-                <p>Selasa, 1 Agustus 2023</p>
+                <p>Admin Panel SIMFONI RSUD DR. SAMRATULANGI TONDANO </p>
+                <p>{formatDate(currentDate)}</p>
               </div>
             </div>
           )}

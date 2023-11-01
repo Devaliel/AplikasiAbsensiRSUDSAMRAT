@@ -201,7 +201,7 @@ export default function PageDashboard() {
   const exampleNotification = [
     {
       name: 'Tiger Nixon',
-      text: 'Hello, how are you ?',
+      text: 'Gila?',
       time: '26/08/2023'
     },
     {

@@ -4,12 +4,8 @@ import api from '../../config/axios';
 import { HiOutlineX } from 'react-icons/hi';
 
 const ModalBukti = forwardRef((props, ref) => {
-  const { imageCheckIn, imageCheckOut, selectedData } = props;
+  const { imageCheckIn, imageCheckOut, clockInTime, clockOutTime, selectedData } = props;
   const [isCheckedIn, setIsCheckedIn] = useState(false);
-
-  console.log('selectedData', selectedData);
-
-  console.log(imageCheckIn, imageCheckOut);
 
   const toggleCheckIn = () => {
     setIsCheckedIn(!isCheckedIn);
@@ -26,6 +22,19 @@ const ModalBukti = forwardRef((props, ref) => {
       return imageCheckOut;
     }
   };
+
+const getClockToDisplay = () => {
+  if(isCheckedIn) {
+    return <p className='text-green-700 text-lg font-bold'>{clockInTime}</p>;
+  } else {
+    if(clockOutTime) {
+      return clockOutTime
+    } else {
+      return <p className='text-red-400 font-bold'>BELUM ABSEN</p>
+    }
+  }
+}
+  const clockToDisplay = getClockToDisplay();
 
   const imageToDisplay = getImageToDisplay();
 
@@ -83,40 +92,54 @@ const ModalBukti = forwardRef((props, ref) => {
       ref={ref}
       modal
       onClose={closeModal}
-      contentStyle={{ borderRadius: '12px', padding: '0', width: '28rem' }}>
+      contentStyle={{ borderRadius: "12px", padding: "0", width: "28rem" }}
+    >
       {(close) => (
-        <div className='relative p-6 overflow-hidden'>
-          <div className='flex flex-col items-center gap-4 mt-4 mb-2'>
+        <div className="relative p-2 overflow-hidden w-full h-full">
+          <div className="flex flex-col items-center gap-4 mt-4 mb-2">
             <button
-              className='absolute block cursor-pointer top-1 right-1'
-              onClick={close}>
-              <HiOutlineX className='text-2xl text-gray-500' />
+              className="absolute block cursor-pointer top-1 right-1"
+              onClick={close}
+            >
+              <HiOutlineX className="text-2xl text-gray-500" />
             </button>
-            <div className='flex gap-2 text-xl font-semibold'>
+            <div className="flex gap-2 text-xl font-semibold">
               <button
-                className={`${isCheckedIn ? 'text-primary-2' : ''}`}
-                onClick={toggleCheckIn}>
+                className={`${isCheckedIn ? "text-primary-2" : ""}`}
+                onClick={toggleCheckIn}
+              >
                 Check in
               </button>
               <button
-                className={` ${!isCheckedIn ? ' text-primary-2' : ''}`}
-                onClick={toggleCheckIn}>
+                className={` ${!isCheckedIn ? " text-primary-2" : ""}`}
+                onClick={toggleCheckIn}
+              >
                 Check out
               </button>
             </div>
-            <div className='flex flex-col items-center'>
+            <div className="flex flex-col items-center">
               <span>{selectedData && convertDate(selectedData.time)}</span>
-              <span>{selectedData && selectedData.clockInTime}</span>
+              <span>{clockToDisplay}</span>
             </div>
-            <span className='text-xl font-bold'>
+            <span className="text-xl font-bold">
               {selectedData && selectedData.name}
             </span>
-            <div className='p-3 border-4 rounded-xl border-primary-2'>
-              <img
-                src={`data:image/png;base64,${imageToDisplay}`}
-                alt='bukti'
-                className='object-cover w-[314px] h-[489px] rounded-lg'
-              />
+            <div className="p-1 border-4 rounded-xl ">
+              {imageToDisplay ? (
+                <img
+                  src={`data:image/png;base64,${imageToDisplay}`}
+                  alt="bukti"
+                  className="object-fill w-full h-[500px] rounded-lg"
+                />
+              ) : (
+                <div>
+                  <img
+                    src="https://placehold.co/800?text=No+Image+:)&font=lora"
+                    alt="bukti"
+                    className="w-full h-[500px] rounded-lg"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { StyleSheet, View, TouchableOpacity, Linking, Image, ActivityIndicator } from 'react-native'
+import { StyleSheet, View, TouchableOpacity, Linking, Image, ActivityIndicator, Platform } from 'react-native'
 import React, { useRef, useState, useEffect } from 'react'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import AttendanceConfirmation from '../AttendanceConfirmation';
@@ -40,6 +40,7 @@ const OpenCamera = ({navigation}: any) => {
                 setTakePhotoClicked(false);
             }
         } catch (error) {
+            console.log('can not take photo!');
         }
     }
 
@@ -69,7 +70,11 @@ const OpenCamera = ({navigation}: any) => {
                         alignItems: 'center'
                     }}
                     onPress={()=> {
-                        newNavigation.goBack();
+                        if (Platform.OS === 'android'){
+                            newNavigation.goBack();
+                        } else if (Platform.OS === 'ios'){
+                            navigation.push('Attendance');
+                        }
                     }}>
                         <Image
                             source={require('./../../assets/icons/Expand_left.png')}

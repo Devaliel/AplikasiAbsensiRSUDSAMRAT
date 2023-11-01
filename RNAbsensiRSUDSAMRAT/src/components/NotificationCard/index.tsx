@@ -33,10 +33,12 @@ const styles = StyleSheet.create({
         paddingLeft: 12,
         paddingRight: 5,
         paddingVertical: 10,
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        marginBottom: 5
     },
     secContainer:{
         flexDirection: 'row',
+        width: 320
     },
     smallImageContainer:{
         width: 41,
@@ -74,6 +76,6 @@ const styles = StyleSheet.create({
     },
     thirdContainer:{
         alignItems: 'flex-end',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
     },
 })

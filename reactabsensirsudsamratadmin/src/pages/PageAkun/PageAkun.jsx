@@ -50,7 +50,7 @@ export default function PageAkun() {
     {
       name: "ID",
       selector: (row) => row.employeeId,
-      width: "50px",
+      width: "75px",
     },
     {
       name: "Name",
@@ -200,6 +200,9 @@ export default function PageAkun() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          <p className="text-xs text-slate-500">
+            {filteredAkunData.length} users
+          </p>
           <div className="overflow-auto max-h-[60vh]">
             <DataTable
               columns={columns}

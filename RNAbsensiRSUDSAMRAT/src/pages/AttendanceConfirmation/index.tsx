@@ -1,8 +1,10 @@
-import { Image, StyleSheet, Text, View, TouchableOpacity, SafeAreaView } from 'react-native'
+import { Image, StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import SwipeButton from 'rn-swipe-button'
 import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import RNFetchBlob from 'rn-fetch-blob';
+import ImageResizer from '@bam.tech/react-native-image-resizer';
 
 const AttendanceConfirmation = ({imageData, navigation, attdType}: any) => {
 
@@ -14,12 +16,13 @@ const AttendanceConfirmation = ({imageData, navigation, attdType}: any) => {
     const [locationLongIn, setLocationLongIn] = useState(-122.4194);
     const [locationLatOut, setLocationLatOut] = useState(37.7749);
     const [locationLongOut, setLocationLongOut] = useState(-122.4194);
-    const [selfieUrlCheckIn, setSelfieUrlCheckIn] = useState('https://rb.gy/fre1l');
-    const [selfieUrlCheckOut, setSelfieUrlCheckOut] = useState('https://rb.gy/fre1l');
+    const [imagePath, setImagePath] = useState('');
     const [status, setStatus] = useState('CheckIn');
     const [attendanceType, setAttendanceType] = useState(attdType);
     const [attendanceInOrOut, setAttendanceInOrOut] = useState('');
     const [attendanceId, setAttendanceId] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+
 
     const getUserData = async (currentDate) => {
         try {
@@ -36,7 +39,7 @@ const AttendanceConfirmation = ({imageData, navigation, attdType}: any) => {
                 .catch(function(error){
                     console.log('failed to get attendanceId:', error)
                 })
-            } 
+            }
 
             const getScheduledId = async (attendanceDate, employeeId) => {
                 await axios.get(`http://rsudsamrat.site:9999/api/v1/dev/schedule`)
@@ -62,71 +65,173 @@ const AttendanceConfirmation = ({imageData, navigation, attdType}: any) => {
     }
 
     const checkIn = async () => {
-        let data = new FormData();
-        const url = 'http://rsudsamrat.site:9999/api/v1/dev/attendances/checkInMasuk';
-        data.append('scheduleId', `${scheduleId}`);
-        data.append('employeeId', `${employeeId}`);
-        data.append('attendanceDate', `${attendanceDate}`);
-        data.append('clockIn', `2023-09-04T07:55:00`);
-        data.append('clockOut', '');
-        data.append('locationLatIn', `${locationLatIn}`);
-        data.append('locationLongIn', `${locationLongIn}`);
-        data.append('selfieCheckInImage', `${selfieUrlCheckIn}`);
-        data.append('status', `${status}`);
-        data.append('attendanceType', `${attendanceType}`);
         
-        try {
-            await axios.post(url, data,{
-                headers: {"Content-Type": "multipart/form-data"}
-            })
-            .then(function(response){
-                console.log('berhasil check in');
-                navigation.replace('AttendanceDone');
-            })
-        } catch (error) {
-            console.log('error saat check in:', error);
-        }
+        await convertFileToBase64(imageData)
+        .then(({newPath}) => {
+            let data = new FormData();
+            const url = 'http://rsudsamrat.site:9999/api/v1/dev/attendances/checkInMasuk';
+            data.append('scheduleId', `${scheduleId}`);
+            data.append('employeeId', `${employeeId}`);
+            data.append('attendanceDate', `${attendanceDate}`);
+            data.append('clockIn', `${clock}`);
+            data.append('clockOut', '');
+            data.append('locationLatIn', `${locationLatIn}`);
+            data.append('locationLongIn', `${locationLongIn}`);
+            data.append('status', `${status}`);
+            data.append('selfieCheckInImage', {
+                uri: 'file://' + newPath,
+                name: 'selfieCheckIn.jpg',
+                type: 'image/jpeg'
+            });
+            data.append('attendanceType', `${attendanceType}`);
+            
+            try {
+                axios.post(url, data,{
+                    headers: {"Content-Type": "multipart/form-data"}
+                })
+                .then(function(response){
+                    console.log('berhasil check in');
+                    navigation.replace('AttendanceDone');
+                    let shift_id = response.data.shift.shift_id;
+                    if(shift_id = 3){
+                        AsyncStorage.setItem('shift_id', `${shift_id}`)
+                        .then((result) => {
+                            console.log('berhasil menyimpan shift_id');
+                        }).catch((err) => {
+                            console.log('gagal menyimpan shift_id', err);
+                        });
+                    } else {
+                        console.log('belum menyimpan shift_id');
+                    }
+                })
+                .catch((error) => {
+                    console.log('Error:', error);
+                    setIsLoading(false);
+                })
+            } catch (error) {
+                console.log('error saat check in:', error);
+                Alert.alert('Kendala saat Check In', 'Pastikan anda memiliki jadwal. Jika ada kendala, mohon hubungi admin.', 
+                [
+                    {text: 'OK', onPress: () => console.log('OK Pressed')},
+                ]);
+                navigation.replace('Tabs')
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            setIsLoading(false);
+        });
     }
 
-    const checkOut = (attendanceId) => {
-        const data = {
-            "attendanceId": attendanceId,
-            "clockOut": `2023-09-04T14:05:00`, 
-            "locationLatOut": locationLatOut,
-            "locationLongOut": locationLongOut,
-            "selfieUrlCheckOut": selfieUrlCheckOut
-        }
+    const checkOut = async (attendanceId) => {
+        await convertFileToBase64(imageData)
+        .then(({newPath}) => {
+            let url = 'http://rsudsamrat.site:9999/api/v1/dev/attendances/updatePulang';
+            let data = new FormData();
+    
+            data.append('attendanceId', `${attendanceId}`);
+            data.append('clockOut', `${clock}`);
+            data.append('locationLatOut', `${locationLatOut}`);
+            data.append('locationLongOut', `${locationLongOut}`);
+            data.append('selfieCheckOutImage', {
+                uri: 'file://' + newPath,
+                name: 'selfieCheckOut.jpg',
+                type: 'image/jpeg'
+            });
+            console.log('test')
 
-        axios.post(`http://rsudsamrat.site:9999/api/v1/dev/attendances/updatePulang`, data, {
-            headers: { 
-                'Content-Type': 'application/json'
-            },
+            axios.post(url, data, {
+                headers: {"Content-Type": "multipart/form-data"}
+            })
+            .then((result) => {
+                navigation.replace('AttendanceDone');
+                console.log('berhasil check out')
+            }).catch((err) => {
+                console.log('error saat check out:',err)
+                Alert.alert('Tidak bisa Check Out', 'Pastikan anda Check Out sesuai jadwal. Jika ada kendala, mohon hubungi admin.', 
+                [
+                    {text: 'OK', onPress: () => console.log('OK Pressed')},
+                ]);
+                navigation.replace('Tabs');
+            });
         })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+
+        AsyncStorage.removeItem('shift_id')
         .then((result) => {
-            navigation.replace('AttendanceDone');
-            console.log('berhasil check out')
+            console.log('berhasil menghapus shift_id');
         }).catch((err) => {
-            console.log('error saat check out:',err)
+            console.log('gagal menghapus shift_id');
         });
     }
 
     const setCheckInOrOut = async (attendanceDate) => {
         const employeeIdd = await AsyncStorage.getItem('employeeId');
+        const getShift_id = await AsyncStorage.getItem('shift_id');
+        let newDate = attendanceDate;
 
-        axios.get(`http://rsudsamrat.site:9999/api/v1/dev/attendances/byDateAndEmployee?attendanceDate=${attendanceDate}&employeeId=${employeeIdd}`) //jangan lupa ganti employee id logic
+        if(getShift_id === '3'){
+            console.log('xx:', getShift_id)
+            const date = attendanceDate; 
+            
+            const tanggalAwal = new Date(date);
+            tanggalAwal.setDate(tanggalAwal.getDate() - 1);
+            
+            const tahun = tanggalAwal.getFullYear();
+            const bulan = String(tanggalAwal.getMonth() + 1).padStart(2, '0'); 
+            const tanggal = String(tanggalAwal.getDate()).padStart(2, '0');
+            
+            const tanggalBaru = `${tahun}-${bulan}-${tanggal}`;
+            newDate = tanggalBaru;
+        }
+        console.log(newDate)
+        axios.get(`http://rsudsamrat.site:9999/api/v1/dev/attendances/byDateAndEmployee?attendanceDate=${newDate}&employeeId=${employeeIdd}`)
         .then(function(response){
             if(response.data === `Employee hasn't taken any attendance on the given date.`){
                 setAttendanceInOrOut('Swipe to Check-In');
+                setIsLoading(false);
             } else {
+                const attendanceId = response.data[0].attendanceId;
+                setAttendanceId(attendanceId);
                 setAttendanceInOrOut('Swipe to Check-Out');
+                setIsLoading(false);
             }
         })
         .catch((error)=>{
             console.log('error:',error);
+            setIsLoading(false);
         })
     }
 
+
+    const convertFileToBase64 = async (filePath) => {
+        try {
+        const fileInfo = await RNFetchBlob.fs.stat(filePath);
+        const fileSize = fileInfo.size;
+
+        const resize = await ImageResizer.createResizedImage(
+            filePath,
+            800,
+            600,
+            'JPEG',
+            50
+        )
+
+        const oldSizeKB = (fileSize / 1024).toFixed(2);
+        const newSizeKB = (resize.size / 1024).toFixed(2);
+
+        setImagePath(resize.uri);
+        return { newPath: resize.uri, oldFileSize: oldSizeKB, newFileSize: newSizeKB };
+        } catch (error) {
+        console.error('Error converting file to base64:', error);
+        throw error;
+        }
+    };
+
     useEffect(() => {
+        setIsLoading(true);
         const date = String(new Date().getDate()).padStart(2, '0'); 
         const month = String(new Date().getMonth() + 1).padStart(2, '0'); 
         const year = String(new Date().getFullYear()).padStart(2, '0');
@@ -135,22 +240,25 @@ const AttendanceConfirmation = ({imageData, navigation, attdType}: any) => {
         const sec = String(new Date().getSeconds()).padStart(2, '0'); 
 
         const getDate =  year + '-' + month + '-' + date;
-        // const getDate = '2023-09-04';
+        // const getDate = '2023-10-22';
+        
+        // setClock('2023-10-22T08:03:49');
         setAttendanceDate(getDate);
-
         setClock(
             year + '-' + month + '-' + date + 'T' + hours + ':' + min + ':' + sec
         );
 
         setCheckInOrOut(getDate);
         getUserData(getDate);
-    }, [])
+    }, [imageData])
     
-    const afterSwipe = () => {
+    const afterSwipe = async () => {
+        setIsLoading(true)
         if(attendanceInOrOut === 'Swipe to Check-In'){
             checkIn();
         } else if (attendanceInOrOut === 'Swipe to Check-Out') {
             checkOut(attendanceId);
+            // checkIn();
         }
     }
     
@@ -160,6 +268,14 @@ const AttendanceConfirmation = ({imageData, navigation, attdType}: any) => {
 
 return (
     <SafeAreaView style={styles.page}>
+        {isLoading ? (
+            <ActivityIndicator
+                size={'large'}
+                color={'#fff'}
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+            />
+        ) : (
+            <>
         <Text style={styles.title}>Konfirmasi Foto</Text>
         <View style={styles.photoContainer}>
             <Image 
@@ -176,7 +292,7 @@ return (
             activeOpacity={0.7}
             onPress={()=> {
                 reOpenCamera();
-        }}>
+            }}>
             <Text style={{fontSize: 23, color: '#262D33', fontWeight: '600'}}>Take Again</Text>
         </TouchableOpacity>
         <View style={{width: '75%', marginTop: 20}}>
@@ -190,8 +306,10 @@ return (
                 titleStyles={{fontSize:23, color:'#fff', fontWeight:'600'}}
                 shouldResetAfterSuccess={true}
                 onSwipeSuccess={afterSwipe}
-            />
+                />
         </View>
+        </>
+    )}
     </SafeAreaView>
 )
 }

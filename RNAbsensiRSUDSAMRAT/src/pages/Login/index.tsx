@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text, View, SafeAreaView, TextInput, ScrollView, Dimensions, Alert } from 'react-native';
+import { Image, StyleSheet, Text, View, SafeAreaView, TextInput, ScrollView, Dimensions, Alert, Platform } from 'react-native';
 import React, { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ilustration3, Logo } from '../../assets/images';
@@ -10,7 +10,6 @@ const Login = ({navigation}: any) => {
     const [nik, setNik] = useState('');
     const [password, setPassword] = useState('');
     const [dataUser, setDataUser] = useState();
-    const [error, setError] = useState('');
     
     const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
     
@@ -44,7 +43,11 @@ const Login = ({navigation}: any) => {
             storeAccessToken(access_token, nik);
             
             if(access_token){
-                navigation?.replace('Tabs');
+                if (Platform.OS === 'android'){
+                    navigation.replace('Tabs');
+                } else if (Platform.OS === 'ios'){
+                    navigation.push('Tabs');
+                }
             } else {
                 console.log("No access token found!")
                 Alert.alert(
@@ -60,17 +63,6 @@ const Login = ({navigation}: any) => {
             }
         })
         .catch(function (error) {
-            // console.log('error:',error);
-            // Alert.alert(
-            //     'Error',
-            //     `${error}`,
-            //     [
-            //         {
-            //             text: 'OK',
-            //             style: 'default'
-            //         }
-            //     ]
-            // )
             Alert.alert(
                 'NIK/Password tidak sesuai!',
                 'Pastikan NIK dan Password di isi dengan benar.',
@@ -87,9 +79,9 @@ const Login = ({navigation}: any) => {
 
     return (
         <SafeAreaView style={styles.page}>
+            <Image source={Ilustration3} style={{width: imageWidth, height: imageHeight, position: 'absolute', resizeMode: 'cover'}} />
             <ScrollView>
                 <View style={styles.container}>
-                    <Image source={Ilustration3} style={{width: imageWidth, height: imageHeight, position: 'absolute'}} />
                     <Image source={Logo} style={styles.logo} />
                     <Text style={styles.text}>RSUD DR SAM RATULANGI TONDANO</Text>
                     <Gap height={93}/>
@@ -123,8 +115,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     container:{
-        alignItems: 'center',
-        paddingBottom: '30%'
+        alignItems: 'center'
     },
     logo:{
         height: 115,

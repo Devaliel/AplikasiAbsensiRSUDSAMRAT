@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, SafeAreaView, Image } from 'react-native';
+import { StyleSheet, Text, View, SafeAreaView, Image, Platform } from 'react-native';
 import React, { useEffect } from 'react';
 import { Ilustration, Logo } from '../../assets/images';
 import axios from 'axios';
@@ -25,17 +25,29 @@ const SplashScreen = ({navigation}: any) => {
             const responseMSG = responseJSON.response.data;
 
             if(responseMSG === 'pong'){
-                navigation.replace('Tabs');
+                if (Platform.OS === 'android'){
+                    navigation.replace('Tabs');
+                } else if (Platform.OS === 'ios'){
+                    navigation.push('Tabs');
+                }
             } else {
                 setTimeout(() => {
-                    navigation.replace('Login')
+                    if (Platform.OS === 'android'){
+                        navigation.replace('Login');
+                    } else if (Platform.OS === 'ios'){
+                        navigation.push('Login');
+                    }
                 }, 3000);
             }
         })
         .catch(function (error){
             console.log("error ",error.status);
             setTimeout(() => {
-                navigation.replace('Login')
+                if (Platform.OS === 'android'){
+                    navigation.replace('Login');
+                } else if (Platform.OS === 'ios'){
+                    navigation.push('Login');
+                }
             }, 3000);
         })
     }

@@ -30,6 +30,7 @@ export default function PagePengumuman() {
     await apiCheckToken
       .delete(`/notification/${id}`)
       .then((res) => {
+        console.log(res.data)
         setRefresh((prev) => !prev);
       })
       .catch((err) => {

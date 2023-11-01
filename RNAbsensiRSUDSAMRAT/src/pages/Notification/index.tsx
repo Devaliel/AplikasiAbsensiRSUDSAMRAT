@@ -1,11 +1,4 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  SafeAreaView,
-  ScrollView,
-} from 'react-native';
+import { StyleSheet, Text, View, Image, SafeAreaView, ScrollView } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {Ilustration1, Ilustration6} from '../../assets/images';
 import NotificationCard from '../../components/NotificationCard';

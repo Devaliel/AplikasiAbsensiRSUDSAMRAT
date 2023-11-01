@@ -35,7 +35,11 @@ export default function ViewAllSchedule() {
   const [schedule, setSchedule] = useState([]);
 
   const navigate = useNavigate();
-  console.log(filteredSchedule);
+  // console.log(filteredSchedule);
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
 
   function filterSchedules(schedules, id, name) {
     setEmployeeSchedule(
@@ -242,8 +246,9 @@ export default function ViewAllSchedule() {
       },
     },
   };
-  const defaultFilter = () => {
-    const uniqueEmployees = schedule.reduce((acc, sch) => {
+
+  const getUniqueEmployees = (dataSchedule) => {
+    return dataSchedule?.reduce((acc, sch) => {
       const employees = sch.employees;
 
       for (const emp of employees) {
@@ -263,6 +268,9 @@ export default function ViewAllSchedule() {
 
       return acc;
     }, []);
+  };
+  const defaultFilter = (data) => {
+    const uniqueEmployees = getUniqueEmployees(data);
 
     setFilteredSchedule(uniqueEmployees);
   };
@@ -271,45 +279,12 @@ export default function ViewAllSchedule() {
     api
       .get("/api/v1/dev/schedule")
       .then((res) => {
-        // const allEmployees = [];
-        // const dataSchedule = res.data;
-        // for (const sch of dataSchedule) {
-        //   const employees = sch.employees;
-
-        //   for (const emp of employees) {
-        //     allEmployees.push(emp);
-        //   }
-        // }
-        // Create a Set to store unique employeeIds
         const dataSchedule = res.data;
-
         // Filter out unique employees based on employeeId
-        const uniqueEmployees = dataSchedule.reduce((acc, sch) => {
-          const employees = sch.employees;
-
-          for (const emp of employees) {
-            const existingEmployee = acc.find(
-              (e) => e.employeeId === emp.employeeId
-            );
-
-            if (!existingEmployee) {
-              acc.push(emp);
-            } else {
-              // Update the existing employee with additional properties
-              existingEmployee.role = emp.role;
-              existingEmployee.nik = emp.nik;
-              existingEmployee.name = emp.name;
-            }
-          }
-
-          return acc;
-        }, []);
+        const uniqueEmployees = getUniqueEmployees(dataSchedule);
 
         setFilteredSchedule(uniqueEmployees);
         setSchedule(dataSchedule);
-        // setFilteredSchedule(allEmployees);
-
-        // console.log(allEmployees);
       })
       .catch((err) => {
         console.log(err);
@@ -318,20 +293,21 @@ export default function ViewAllSchedule() {
 
   useEffect(() => {
     if (searchTerm === "") {
-      // setFilteredSchedule(
-      //   schedule
-      //     .filter((schedule) => schedule.employees.length !== 0)
-      //     .map((schedule) => schedule.employees)
-      //     .flat()
-
-      // );
-      defaultFilter();
+      defaultFilter(schedule);
       return;
     }
-    const results = filteredSchedule.filter((employee) =>
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const uniqueEmployees = getUniqueEmployees(schedule);
+    const searchWords = searchTerm.toLowerCase().split(" ");
+
+    const results = uniqueEmployees.filter((employee) => {
+      const employeeName = employee.name.toLowerCase();
+
+      // Check if any of the search words match the employee's name
+      return searchWords.some((word) => employeeName.includes(word));
+    });
+
     setFilteredSchedule(results);
+    console.log(searchTerm);
   }, [searchTerm, schedule]);
 
   useEffect(() => {
@@ -364,7 +340,7 @@ export default function ViewAllSchedule() {
 
   useEffect(() => {
     if (scheduleTime === "Shift") {
-      defaultFilter();
+      defaultFilter(schedule);
       return;
     }
 
@@ -376,7 +352,7 @@ export default function ViewAllSchedule() {
         shiftLabel = "Pagi";
       } else if (startTime === "14:00:00") {
         shiftLabel = "Sore";
-      } else if (startTime === "16:00:00") {
+      } else if (startTime === "20:00:00") {
         shiftLabel = "Malam";
       }
       if (shiftLabel === scheduleTime) {
@@ -467,7 +443,7 @@ export default function ViewAllSchedule() {
               placeholder="Cari..."
               className="w-full pl-10 input input-bordered"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearch}
             />
           </div>
           <div className="">

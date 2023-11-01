@@ -98,7 +98,7 @@ export default function App() {
                   to="/shift"
                   onClick={() => setActiveLink("/shift")}
                   className={`flex items-center gap-3 text-lg ${
-                    activeLink === "shift" ? "text-primary-2" : ""
+                    activeLink === "/shift" ? "text-primary-2" : ""
                   }`}
                 >
                   <HiOutlineDocumentAdd />
