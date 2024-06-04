@@ -50,6 +50,21 @@ public class AttendanceController {
         }
     }
 
+    @GetMapping("/Date/date-range")
+    public ResponseEntity<List<AttendanceCreateResponseDTO>> getAttendanceByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        try {
+            List<AttendanceCreateResponseDTO> attendanceList = attendanceService.getAllAttendanceByDateRange(startDate, endDate, page, size);
+            return new ResponseEntity<>(attendanceList, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @PostMapping("/updatePulang")
     public ResponseEntity<?> updateAttendanceStatusAndCheckoutDetails(
             @RequestParam(value = "selfieCheckOutImage", required = false) MultipartFile selfieCheckOutImage,
@@ -95,6 +110,8 @@ public ResponseEntity<?> getAttendanceByDateAndEmployee(
         List<AttendanceScheduleDTO> attendanceWithSchedule = attendanceService.getAllAttendanceWithSchedule();
         return new ResponseEntity<>(attendanceWithSchedule, HttpStatus.OK);
     }
+
+
 
     @GetMapping("/all-with-schedule-id")
     public ResponseEntity<List<AttendanceScheduleIdDTO>> getAllAttendanceWithScheduleId() {

@@ -1,5 +1,7 @@
 package rsud.samrat.springboot.Attendance;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,4 +24,8 @@ public interface AttendanceRepository extends JpaRepository<AttendanceModel,Long
 
     @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END FROM AttendanceModel a WHERE :employee MEMBER OF a.employees AND a.attendance_date = :attendanceDate")
     boolean existsByEmployeesContainsAndAttendanceDate(EmployeeModel employee, LocalDate attendanceDate);
+
+
+    @Query("SELECT a FROM AttendanceModel a WHERE a.attendance_date BETWEEN :startDate AND :endDate")
+    Page<AttendanceModel> findAllByAttendanceDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate, Pageable pageable);
 }

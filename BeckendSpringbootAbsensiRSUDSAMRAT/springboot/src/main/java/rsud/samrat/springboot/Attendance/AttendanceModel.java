@@ -29,7 +29,7 @@ public class AttendanceModel {
     @JsonBackReference
     private ScheduleModel schedule;
 
-    @ManyToMany // Add the ManyToMany relationship with EmployeeModel
+    @ManyToMany
     @JoinTable(
             name = "attendance_employee",
             joinColumns = @JoinColumn(name = "attendance_id"),

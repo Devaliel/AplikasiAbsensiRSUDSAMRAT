@@ -11,11 +11,17 @@ public interface AttendanceService {
 
     AttendanceCreateResponseDTO addAttendanceToScheduleNoValidations(AttendanceCreateRequestDTO requestDTO, MultipartFile selfieCheckInImage);
     List<AttendanceCreateResponseDTO> getAllAttendanceByDate(LocalDate attendanceDate);
+
+    List<AttendanceCreateResponseDTO> getAllAttendanceByDateRange(LocalDate startDate, LocalDate endDate, int page, int size);
     AttendanceCreateResponseDTO updateAttendanceStatusAndCheckoutDetails(AttendanceUpdateRequestDTO requestDTO, MultipartFile selfieCheckOutImage);
 
     List<AttendanceCreateResponseDTO> getAllAttendanceByDateAndEmployee(LocalDate attendanceDate, Long employeeId);
 
     List<AttendanceScheduleDTO> getAllAttendanceWithSchedule();
+
+
+
+
     List<AttendanceScheduleIdDTO> getAllAttendanceWithScheduleId();
 
     List<AttendanceScheduleIdDTO> filterAttendances(AttendanceFilterDTO filterDTO);

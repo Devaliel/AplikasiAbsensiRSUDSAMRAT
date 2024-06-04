@@ -2,6 +2,9 @@ package rsud.samrat.springboot.Attendance;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import rsud.samrat.springboot.Attendance.DTOs.*;
@@ -291,6 +294,31 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
+    public List<AttendanceCreateResponseDTO> getAllAttendanceByDateRange(LocalDate startDate, LocalDate endDate, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<AttendanceModel> attendancePage = attendanceRepository.findAllByAttendanceDateRange(startDate, endDate, pageable);
+
+        List<AttendanceCreateResponseDTO> attendanceList = new ArrayList<>();
+
+        for (AttendanceModel attendance : attendancePage.getContent()) {
+            AttendanceCreateResponseDTO responseDTO = modelMapper.map(attendance, AttendanceCreateResponseDTO.class);
+            responseDTO.setScheduleId(attendance.getSchedule().getSchedule_id());
+            responseDTO.setEmployee(modelMapper.map(attendance.getEmployees().get(0), CreateEmployeeResponseDTO.class));
+            responseDTO.setShift(modelMapper.map(attendance.getSchedule().getShift(), ShiftResponseDTO.class));
+
+            LocationModel location = attendance.getSchedule().getLocation();
+            if (location != null) {
+                LocationsCreateResponseDTO locationDTO = modelMapper.map(location, LocationsCreateResponseDTO.class);
+                responseDTO.setLocation(locationDTO);
+            }
+
+            attendanceList.add(responseDTO);
+        }
+
+        return attendanceList;
+    }
+
+    @Override
     public List<AttendanceCreateResponseDTO> getAllAttendanceByDateAndEmployee(LocalDate attendanceDate, Long employeeId) {
         List<AttendanceModel> attendanceRecords = attendanceRepository.findAllByAttendanceDateAndEmployeeId(attendanceDate, employeeId);
 
@@ -451,25 +479,25 @@ public class AttendanceServiceImpl implements AttendanceService {
         List<AttendanceScheduleDTO> result = new ArrayList<>();
 
         for (AttendanceModel attendance : attendanceRecords) {
-            // Skip attendance records with no schedule
+
             if (attendance.getSchedule() == null) {
                 continue;
             }
 
-            // Create a new AttendanceScheduleDTO for each schedule
+
             AttendanceScheduleDTO scheduleDTO = new AttendanceScheduleDTO();
             scheduleDTO.setScheduleId(attendance.getSchedule().getSchedule_id());
             scheduleDTO.setScheduleDate(attendance.getSchedule().getSchedule_date());
             scheduleDTO.setShift(mapShiftToShiftResponseDTO(attendance.getSchedule().getShift()));
 
-            // Fetch and set location information if available
+
             LocationModel location = attendance.getSchedule().getLocation();
             if (location != null) {
                 LocationsCreateResponseDTO locationDTO = modelMapper.map(location, LocationsCreateResponseDTO.class);
                 scheduleDTO.setLocation(locationDTO);
             }
 
-            // Add attendance details to the scheduleDTO
+
             AttendanceCreateResponseDTO attendanceDTO = modelMapper.map(attendance, AttendanceCreateResponseDTO.class);
             attendanceDTO.setScheduleId(attendance.getSchedule().getSchedule_id());
             attendanceDTO.setEmployee(mapEmployeeToCreateEmployeeResponseDTO(attendance.getEmployees().get(0)));
@@ -480,6 +508,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         return result;
     }
+
+
+
+
 
 
     public List<AttendanceScheduleIdDTO> getAllAttendanceWithScheduleId() {
